@@ -10,12 +10,7 @@ export const REFRESH_COOKIE_NAME = 'dental_refresh';
 export const LOGGED_OUT_COOKIE_NAME = 'dental_logged_out';
 
 export function isStrictAuthMode(): boolean {
-  const isTestRun =
-    process.env.NODE_ENV === 'test' ||
-    env.NODE_ENV === 'test' ||
-    process.execArgv.includes('--test') ||
-    process.argv.some((arg) => arg.includes('.test.'));
-  return isTestRun || process.env.STRICT_AUTH_MODE === 'true';
+  return true;
 }
 
 export interface AuthenticatedContext {
@@ -76,57 +71,6 @@ export function clearAuthCookies(res: Response, markLoggedOut = false): void {
   }
 }
 
-async function createAutoLocalSession(
-  req: Request,
-  res: Response
-): Promise<AuthenticatedContext | null> {
-  const acctRes = await queryInternal<{
-    id: string;
-    clinic_id: string;
-    email: string;
-  }>(
-    `SELECT id, clinic_id, email
-     FROM auth_internal.clinic_accounts
-     ORDER BY created_at ASC
-     LIMIT 1`
-  );
-  const acct = acctRes.rows[0];
-  if (!acct) return null;
-
-  const rawSessionToken = generateRandomToken(32);
-  const rawRefreshToken = generateRandomToken(32);
-  const csrfToken = generateRandomToken(24);
-  const sessionId = crypto.randomUUID();
-  const expiresAt = new Date(Date.now() + env.SESSION_MAX_AGE_MS).toISOString();
-
-  await queryInternal(
-    `INSERT INTO auth_internal.sessions
-     (id, account_id, clinic_id, token_hash, refresh_token_hash, csrf_token, ip_address, user_agent, expires_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-    [
-      sessionId,
-      acct.id,
-      acct.clinic_id,
-      hashTokenSha256(rawSessionToken),
-      hashTokenSha256(rawRefreshToken),
-      csrfToken,
-      getClientIp(req),
-      String(req.headers['user-agent'] || '').slice(0, 250),
-      expiresAt,
-    ]
-  );
-
-  setAuthCookies(res, rawSessionToken, rawRefreshToken);
-
-  return {
-    sessionId,
-    accountId: acct.id,
-    clinicId: acct.clinic_id,
-    email: acct.email,
-    csrfToken,
-  };
-}
-
 /**
  * Mandatory server-side authentication & CSRF verification middleware (Rule 4, Rule 10, Rule 11, Rule 13).
  * Checks:
@@ -142,17 +86,8 @@ export async function requireAuth(
 ): Promise<void> {
   try {
     const rawToken = req.cookies?.[SESSION_COOKIE_NAME];
-    const explicitlyLoggedOut = req.cookies?.[LOGGED_OUT_COOKIE_NAME] === '1';
 
     if (!rawToken || typeof rawToken !== 'string') {
-      if (!isStrictAuthMode() && !explicitlyLoggedOut) {
-        const autoAuth = await createAutoLocalSession(req, res);
-        if (autoAuth) {
-          req.auth = autoAuth;
-          next();
-          return;
-        }
-      }
       res.status(401).json({
         error: 'UNAUTHORIZED',
         message: 'Authentication required. Your unsaved changes are safely kept locally.',
@@ -191,14 +126,6 @@ export async function requireAuth(
 
     const row = result.rows[0];
     if (!row || row.revoked_at) {
-      if (!isStrictAuthMode() && !explicitlyLoggedOut) {
-        const autoAuth = await createAutoLocalSession(req, res);
-        if (autoAuth) {
-          req.auth = autoAuth;
-          next();
-          return;
-        }
-      }
       clearAuthCookies(res);
       res.status(401).json({
         error: 'SESSION_INVALID',
@@ -216,14 +143,6 @@ export async function requireAuth(
         `UPDATE auth_internal.sessions SET revoked_at = NOW() WHERE id = $1`,
         [row.session_id]
       );
-      if (!isStrictAuthMode() && !explicitlyLoggedOut) {
-        const autoAuth = await createAutoLocalSession(req, res);
-        if (autoAuth) {
-          req.auth = autoAuth;
-          next();
-          return;
-        }
-      }
       clearAuthCookies(res);
       res.status(401).json({
         error: 'SESSION_EXPIRED',

