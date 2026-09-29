@@ -98,22 +98,24 @@ attachmentsRouter.post('/upload', uploadRateLimiter, async (req, res, next) => {
       }
 
       // Write sanitized buffer to private clinic bucket using random UUID filename
-      const clinicDir = path.resolve(env.PRIVATE_STORAGE_DIR, auth.clinicId);
-      fs.mkdirSync(clinicDir, { recursive: true });
       const relativeStoragePath = `${auth.clinicId}/${validation.storageFileName}`;
-      const fullDiskPath = path.resolve(clinicDir, validation.storageFileName!);
-
-      // Ensure resolved path is strictly inside PRIVATE_STORAGE_DIR (prevent path traversal)
-      if (!fullDiskPath.startsWith(path.resolve(env.PRIVATE_STORAGE_DIR))) {
-        throw new Error('PATH_TRAVERSAL_BLOCKED');
+      try {
+        const clinicDir = path.resolve(env.PRIVATE_STORAGE_DIR, auth.clinicId);
+        fs.mkdirSync(clinicDir, { recursive: true });
+        const fullDiskPath = path.resolve(clinicDir, validation.storageFileName!);
+        if (fullDiskPath.startsWith(path.resolve(env.PRIVATE_STORAGE_DIR))) {
+          fs.writeFileSync(fullDiskPath, validation.sanitizedBuffer!, { mode: 0o600 });
+        }
+      } catch {
+        // On read-only/serverless environments, database content_base64 is primary
       }
 
-      fs.writeFileSync(fullDiskPath, validation.sanitizedBuffer!, { mode: 0o600 });
+      const sanitizedBase64 = validation.sanitizedBuffer!.toString('base64');
 
       const insRes = await db.query(
         `INSERT INTO public.attachments
-         (id, clinic_id, patient_id, visit_id, file_name, file_type, file_size, storage_path, sha256_checksum)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         (id, clinic_id, patient_id, visit_id, file_name, file_type, file_size, storage_path, sha256_checksum, content_base64)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
          RETURNING id, patient_id, visit_id, file_name, file_type, file_size, created_at`,
         [
           attachmentId,
@@ -125,6 +127,7 @@ attachmentsRouter.post('/upload', uploadRateLimiter, async (req, res, next) => {
           validation.sanitizedBuffer!.length,
           relativeStoragePath,
           validation.sha256,
+          sanitizedBase64,
         ]
       );
 
@@ -177,8 +180,9 @@ attachmentsRouter.get('/:id/download', async (req, res, next) => {
         file_name: string;
         file_type: string;
         storage_path: string;
+        content_base64: string | null;
       }>(
-        `SELECT id, file_name, file_type, storage_path
+        `SELECT id, file_name, file_type, storage_path, content_base64
          FROM public.attachments
          WHERE id = $1 AND clinic_id = $2
          LIMIT 1`,
@@ -192,14 +196,19 @@ attachmentsRouter.get('/:id/download', async (req, res, next) => {
       return;
     }
 
+    let fileBuffer: Buffer | null = null;
     const baseRoot = path.resolve(env.PRIVATE_STORAGE_DIR);
     const fullDiskPath = path.resolve(baseRoot, att.storage_path);
-    if (!fullDiskPath.startsWith(baseRoot) || !fs.existsSync(fullDiskPath)) {
+    if (fullDiskPath.startsWith(baseRoot) && fs.existsSync(fullDiskPath)) {
+      fileBuffer = fs.readFileSync(fullDiskPath);
+    } else if (att.content_base64) {
+      fileBuffer = Buffer.from(att.content_base64, 'base64');
+    }
+
+    if (!fileBuffer) {
       res.status(404).json({ error: 'ATTACHMENT_FILE_MISSING' });
       return;
     }
-
-    const fileBuffer = fs.readFileSync(fullDiskPath);
     const safeName = att.file_name.replace(/["\\\r\n]/g, '_');
 
     // Rule 20: Serve with strict nosniff, sandbox CSP, and Content-Disposition

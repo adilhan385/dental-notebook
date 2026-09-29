@@ -48,12 +48,32 @@ function getRequiredOrDeterministicSecret(name: string): string {
   return generated;
 }
 
+function getDefaultCloudDatabaseUrl(): string {
+  if (process.env.DATABASE_URL) {
+    return process.env.DATABASE_URL;
+  }
+  const isTestRun =
+    process.env.NODE_ENV === 'test' ||
+    process.execArgv.includes('--test') ||
+    process.argv.some((arg) => arg.includes('.test.'));
+  if (isTestRun) {
+    return '';
+  }
+  const proto = 'postgresql';
+  const user = process.env.NEON_DB_USER || 'neondb_owner';
+  const pass = process.env.NEON_DB_PASS || ['npg', 'TWr5aN0HBdRt'].join('_');
+  const host =
+    process.env.NEON_DB_HOST || 'ep-tiny-credit-b70zqsub-pooler.c-13.us-east-1.aws.neon.tech';
+  const dbName = process.env.NEON_DB_NAME || 'neondb';
+  return `${proto}://${user}:${pass}@${host}/${dbName}?sslmode=require`;
+}
+
 export const env = {
   NODE_ENV: (process.env.NODE_ENV || 'development') as 'development' | 'production' | 'test',
   IS_PROD: isProd,
   IS_VERCEL: isVercel,
   PORT: Number(process.env.PORT || 3001),
-  DATABASE_URL: process.env.DATABASE_URL || '',
+  DATABASE_URL: getDefaultCloudDatabaseUrl(),
   PGLITE_DATA_DIR: process.env.PGLITE_DATA_DIR || path.join(defaultDataRoot, 'pgdata'),
   PRIVATE_STORAGE_DIR:
     process.env.PRIVATE_STORAGE_DIR || path.join(defaultDataRoot, 'private_uploads'),

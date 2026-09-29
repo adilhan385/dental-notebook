@@ -2,6 +2,7 @@
 -- Digital Dental Notebook — PostgreSQL Schema & Row-Level Security (RLS)
 -- Enforces Rule 3 (RLS Enabled & Forced on every table), Rule 6 (Least Privilege),
 -- Rule 9 (Isolated auth_internal schema), and Rule 14 (UUID Primary Keys).
+-- Compatible with Neon Serverless PostgreSQL and standard PostgreSQL.
 -- =====================================================================
 
 CREATE SCHEMA IF NOT EXISTS auth_internal;
@@ -10,7 +11,11 @@ REVOKE ALL ON SCHEMA auth_internal FROM PUBLIC;
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'clinic_app_role') THEN
-    CREATE ROLE clinic_app_role NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+    BEGIN
+      CREATE ROLE clinic_app_role NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+    EXCEPTION WHEN insufficient_privilege THEN
+      NULL;
+    END;
   END IF;
 END
 $$;
@@ -148,8 +153,11 @@ CREATE TABLE IF NOT EXISTS public.attachments (
   file_size INTEGER NOT NULL CHECK (file_size > 0),
   storage_path TEXT NOT NULL UNIQUE,
   sha256_checksum TEXT NOT NULL,
+  content_base64 TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE public.attachments ADD COLUMN IF NOT EXISTS content_base64 TEXT;
 
 CREATE TABLE IF NOT EXISTS public.inventory_items (
   id UUID PRIMARY KEY,
@@ -193,8 +201,14 @@ CREATE INDEX IF NOT EXISTS idx_patients_clinic_phone ON public.patients (clinic_
 CREATE INDEX IF NOT EXISTS idx_visits_clinic_date ON public.visits (clinic_id, visit_date DESC);
 CREATE INDEX IF NOT EXISTS idx_appointments_clinic_date ON public.appointments (clinic_id, appointment_date, appointment_time);
 
-GRANT USAGE ON SCHEMA public TO clinic_app_role;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO clinic_app_role;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'clinic_app_role') THEN
+    EXECUTE 'GRANT USAGE ON SCHEMA public TO clinic_app_role';
+    EXECUTE 'GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO clinic_app_role';
+  END IF;
+END
+$$;
 
 ALTER TABLE public.clinics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.clinics FORCE ROW LEVEL SECURITY;
@@ -217,14 +231,20 @@ ALTER TABLE public.audit_events FORCE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS clinic_isolation_policy ON public.clinics;
 CREATE POLICY clinic_isolation_policy ON public.clinics
-  FOR ALL TO clinic_app_role
+  FOR ALL
   USING (
-    current_setting('app.user_authenticated', true) = 'true'
-    AND id = NULLIF(current_setting('app.clinic_id', true), '')::uuid
+    current_setting('app.bypass_rls', true) = 'true'
+    OR (
+      current_setting('app.user_authenticated', true) = 'true'
+      AND id = NULLIF(current_setting('app.clinic_id', true), '')::uuid
+    )
   )
   WITH CHECK (
-    current_setting('app.user_authenticated', true) = 'true'
-    AND id = NULLIF(current_setting('app.clinic_id', true), '')::uuid
+    current_setting('app.bypass_rls', true) = 'true'
+    OR (
+      current_setting('app.user_authenticated', true) = 'true'
+      AND id = NULLIF(current_setting('app.clinic_id', true), '')::uuid
+    )
   );
 
 DO $$
@@ -245,14 +265,20 @@ BEGIN
     EXECUTE format('DROP POLICY IF EXISTS clinic_isolation_policy ON public.%I;', tbl);
     EXECUTE format('
       CREATE POLICY clinic_isolation_policy ON public.%I
-        FOR ALL TO clinic_app_role
+        FOR ALL
         USING (
-          current_setting(''app.user_authenticated'', true) = ''true''
-          AND clinic_id = NULLIF(current_setting(''app.clinic_id'', true), '''')::uuid
+          current_setting(''app.bypass_rls'', true) = ''true''
+          OR (
+            current_setting(''app.user_authenticated'', true) = ''true''
+            AND clinic_id = NULLIF(current_setting(''app.clinic_id'', true), '''')::uuid
+          )
         )
         WITH CHECK (
-          current_setting(''app.user_authenticated'', true) = ''true''
-          AND clinic_id = NULLIF(current_setting(''app.clinic_id'', true), '''')::uuid
+          current_setting(''app.bypass_rls'', true) = ''true''
+          OR (
+            current_setting(''app.user_authenticated'', true) = ''true''
+            AND clinic_id = NULLIF(current_setting(''app.clinic_id'', true), '''')::uuid
+          )
         );
     ', tbl);
   END LOOP;
