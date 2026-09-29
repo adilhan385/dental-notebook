@@ -22,7 +22,7 @@
     "@noble/hashes": "^1.7.1",
     "cookie-parser": "^1.4.7",
     "express": "^5.1.0",
-    "lucide-react": "^0.475.0",
+    "lucide-react": "^1.48.0",
     "pg": "^8.13.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
