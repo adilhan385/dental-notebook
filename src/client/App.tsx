@@ -309,7 +309,7 @@ export function App() {
     );
   }
 
-  const navigateMobile = (tab: ActiveTab) => {
+  const navigateMobile = (tab: NavTab) => {
     setSelectedPatientId(null);
     setActiveTab(tab);
     setMobileMenuOpen(false);
