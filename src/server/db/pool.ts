@@ -91,9 +91,19 @@ function normalizeRowBooleans(row: Record<string, any>): Record<string, any> {
   return out;
 }
 
+import dns from 'node:dns';
+
+try {
+  dns.setDefaultResultOrder('ipv4first');
+} catch {
+  // ignore
+}
+
 // Ensure PostgreSQL DATE (OID 1082) returns 'YYYY-MM-DD' string and NUMERIC (OID 1700) returns JS number
 pg.types.setTypeParser(1082, (val: string) => val);
 pg.types.setTypeParser(1700, (val: string) => Number(val));
+
+let postgresOfflineFallback = false;
 
 function isTestRunActive(): boolean {
   return (
@@ -105,7 +115,7 @@ function isTestRunActive(): boolean {
 }
 
 function shouldUsePostgres(): boolean {
-  return Boolean(env.DATABASE_URL) && !isTestRunActive();
+  return Boolean(env.DATABASE_URL) && !isTestRunActive() && !postgresOfflineFallback;
 }
 
 function getPgPool(): pg.Pool {
@@ -113,6 +123,7 @@ function getPgPool(): pg.Pool {
     pgPool = new pg.Pool({
       connectionString: env.DATABASE_URL,
       max: 10,
+      connectionTimeoutMillis: 10000,
       ssl: { rejectUnauthorized: false },
     });
   }
@@ -820,8 +831,31 @@ export async function initializeDatabase(): Promise<void> {
   if (isInitialized) return;
 
   if (shouldUsePostgres()) {
-    const pool = getPgPool();
-    await pool.query(POSTGRES_SCHEMA_AND_RLS_SQL);
+    let connected = false;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const pool = getPgPool();
+        await pool.query(POSTGRES_SCHEMA_AND_RLS_SQL);
+        connected = true;
+        break;
+      } catch (err) {
+        if (attempt < 3) {
+          await new Promise((r) => setTimeout(r, 600));
+        } else {
+          console.warn(
+            '  [DB Notice] Online PostgreSQL unreachable (offline mode), falling back to local SQLite:',
+            (err as Error).message
+          );
+          postgresOfflineFallback = true;
+        }
+      }
+    }
+    if (!connected) {
+      const db = getSqliteInstance();
+      db.exec(SQLITE_SCHEMA_AND_RLS_SQL);
+      createSqliteRlsTriggers(db);
+      db.prepare(`UPDATE _rls_context SET bypass_internal = 0`).run();
+    }
   } else {
     const db = getSqliteInstance();
     db.exec(SQLITE_SCHEMA_AND_RLS_SQL);

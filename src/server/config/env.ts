@@ -65,7 +65,7 @@ function getDefaultCloudDatabaseUrl(): string {
   const host =
     process.env.NEON_DB_HOST || 'ep-tiny-credit-b70zqsub-pooler.c-13.us-east-1.aws.neon.tech';
   const dbName = process.env.NEON_DB_NAME || 'neondb';
-  return `${proto}://${user}:${pass}@${host}/${dbName}?sslmode=require`;
+  return `${proto}://${user}:${pass}@${host}/${dbName}?sslmode=verify-full`;
 }
 
 export const env = {
