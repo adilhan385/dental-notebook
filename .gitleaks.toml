@@ -1,0 +1,19 @@
+title = "Digital Dental Notebook Gitleaks Config"
+
+[allowlist]
+description = "Allowlist for template and test files"
+paths = [
+  '''^\.env\.example$'''
+]
+
+[[rules]]
+id = "generic-api-key"
+description = "Detect generic secret or API key assignments"
+regex = '''(?i)(api_key|secret_key|session_secret|private_key|database_url|postgres://[^:\s]+:[^@\s]+@)\s*[:=]\s*['"][A-Za-z0-9_\-./+=]{16,}['"]'''
+tags = ["key", "secret"]
+
+[[rules]]
+id = "private-key-block"
+description = "Detect PEM private keys"
+regex = '''-----BEGIN (RSA|EC|DSA|OPENSSH|PRIVATE) KEY-----'''
+tags = ["key", "pem"]

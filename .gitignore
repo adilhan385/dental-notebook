@@ -1,0 +1,34 @@
+# Environment & Secrets (MANDATORY RULE 1: Never commit secrets)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*service-account*.json
+*credentials*.json
+secrets/
+
+# Local Runtime Data & Private File Storage
+data/
+private_uploads/
+backups/
+*.db
+*.sqlite
+*.sqlite3
+
+# Dependencies & Build Output
+node_modules/
+dist/
+build/
+coverage/
+.vite/
+
+# Logs & OS files
+logs/
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db

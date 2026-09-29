@@ -1,0 +1,14 @@
+{
+  "buildCommand": "npm run build:client",
+  "outputDirectory": "dist/client",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

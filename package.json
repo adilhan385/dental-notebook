@@ -1,0 +1,45 @@
+{
+  "name": "dental-notebook",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Digital Dental Notebook — Secure, fast trilingual (RU/KZ/EN) clinical notebook for a dental practice",
+  "type": "module",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "prepare": "git config core.hooksPath .githooks || true",
+    "dev": "node --max-old-space-size=256 ./node_modules/tsx/dist/cli.mjs src/server/dev.ts",
+    "build:client": "node ./node_modules/vite/bin/vite.js build",
+    "build": "node --max-old-space-size=256 ./node_modules/vite/bin/vite.js build && node --max-old-space-size=256 ./node_modules/typescript/bin/tsc -p tsconfig.server.json",
+    "start": "node --max-old-space-size=256 dist/server/index.js",
+    "test": "node --max-old-space-size=256 --import tsx --test --test-isolation=none tests/security-and-acceptance.test.ts",
+    "typecheck": "node --max-old-space-size=256 ./node_modules/typescript/bin/tsc --noEmit",
+    "security:scan": "node scripts/secret-scan.mjs",
+    "backup:create": "node --max-old-space-size=256 --import tsx scripts/backup-db.ts"
+  },
+  "dependencies": {
+    "@noble/hashes": "^1.7.1",
+    "cookie-parser": "^1.4.7",
+    "express": "^5.1.0",
+    "lucide-react": "^0.475.0",
+    "pg": "^8.13.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.8",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.13.4",
+    "@types/pg": "^8.11.11",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "@types/supertest": "^6.0.2",
+    "@vitejs/plugin-react": "^4.3.4",
+    "supertest": "^7.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vite": "^6.2.0"
+  }
+}

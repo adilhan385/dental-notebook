@@ -1,0 +1,3 @@
+#!/bin/sh
+# Pre-commit hook enforcing Rule 1 (No Secrets in Git)
+node scripts/secret-scan.mjs
