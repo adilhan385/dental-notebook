@@ -220,10 +220,10 @@ export function CalendarView({
     <div className="page-stack">
       {/* Calendar Header & View Switcher */}
       <div className="card">
-        <div className="row-between" style={{ flexWrap: 'wrap', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div className="row-between calendar-header-row">
+          <div className="calendar-nav-group">
             <h1 style={{ margin: 0, fontSize: 22 }}>{t.calendar.title}</h1>
-            <div style={{ display: 'flex', gap: 6 }}>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
               <button className="btn btn-secondary btn-sm" onClick={() => shiftDate(-1)}>
                 <ChevronLeft size={16} />
               </button>
@@ -237,13 +237,13 @@ export function CalendarView({
                 <ChevronRight size={16} />
               </button>
             </div>
-            <span style={{ fontWeight: 600 }}>
+            <span className="calendar-date-label">
               {formatDisplayDate(from)}
               {from !== to ? ` — ${formatDisplayDate(to)}` : ''}
             </span>
           </div>
 
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <div className="calendar-controls-group">
             <div className="segmented-tabs">
               <button
                 type="button"

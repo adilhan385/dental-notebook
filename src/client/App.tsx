@@ -9,6 +9,8 @@ import {
   Settings,
   LogOut,
   ArrowLeft,
+  Menu,
+  X,
 } from 'lucide-react';
 import {
   translations,
@@ -58,6 +60,7 @@ export function App() {
   >(null);
   const [openCalendarCreate, setOpenCalendarCreate] = useState(false);
   const [syncNotice, setSyncNotice] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Login & Recovery Form State
   const [email, setEmail] = useState('');
@@ -306,9 +309,171 @@ export function App() {
     );
   }
 
+  const navigateMobile = (tab: ActiveTab) => {
+    setSelectedPatientId(null);
+    setActiveTab(tab);
+    setMobileMenuOpen(false);
+  };
+
   return (
     <div className="app-shell">
-      {/* Sidebar Navigation */}
+      {/* Mobile Top Header */}
+      <header className="mobile-header">
+        <div
+          className="mobile-brand"
+          onClick={() => navigateMobile('home')}
+          role="button"
+          tabIndex={0}
+        >
+          <span className="brand-gold-dot" />
+          <div>
+            <div className="mobile-brand-title">{t.appName}</div>
+            {clinic?.name && (
+              <div className="mobile-brand-sub">{clinic.name}</div>
+            )}
+          </div>
+        </div>
+
+        <div className="mobile-header-right">
+          <div className="mobile-lang-switcher" aria-label="Language Switcher">
+            {(['ru', 'kz', 'en'] as Language[]).map((l) => (
+              <button
+                key={l}
+                type="button"
+                className={`mobile-lang-btn ${lang === l ? 'active' : ''}`}
+                onClick={() => setLang(l)}
+              >
+                {l.toUpperCase()}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="mobile-menu-toggle"
+            aria-label="Menu"
+            onClick={() => setMobileMenuOpen((v) => !v)}
+          >
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
+      </header>
+
+      {/* Mobile Slide-Over Drawer */}
+      {mobileMenuOpen && (
+        <div
+          className="mobile-drawer-backdrop"
+          onClick={() => setMobileMenuOpen(false)}
+        >
+          <aside
+            className="mobile-drawer"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mobile-drawer-head">
+              <div>
+                <div className="brand-title">
+                  <span className="brand-gold-dot" />
+                  <span>{t.appName}</span>
+                </div>
+                <div style={{ fontSize: 12, color: '#94A3B8', marginTop: 4 }}>
+                  {clinic?.name}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="mobile-drawer-close"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <nav className="mobile-drawer-nav">
+              <button
+                className={`nav-btn ${
+                  activeTab === 'home' && !selectedPatientId ? 'active' : ''
+                }`}
+                onClick={() => navigateMobile('home')}
+              >
+                <LayoutGrid size={18} strokeWidth={2} />
+                <span>{t.nav.home}</span>
+              </button>
+              <button
+                className={`nav-btn ${
+                  activeTab === 'patients' || selectedPatientId ? 'active' : ''
+                }`}
+                onClick={() => navigateMobile('patients')}
+              >
+                <Users size={18} strokeWidth={2} />
+                <span>{t.nav.patients}</span>
+              </button>
+              <button
+                className={`nav-btn ${
+                  activeTab === 'calendar' && !selectedPatientId ? 'active' : ''
+                }`}
+                onClick={() => navigateMobile('calendar')}
+              >
+                <Calendar size={18} strokeWidth={2} />
+                <span>{t.nav.calendar}</span>
+              </button>
+              <button
+                className={`nav-btn ${
+                  activeTab === 'inventory' && !selectedPatientId ? 'active' : ''
+                }`}
+                onClick={() => navigateMobile('inventory')}
+              >
+                <Package size={18} strokeWidth={2} />
+                <span>{t.nav.inventory}</span>
+              </button>
+              <button
+                className={`nav-btn ${
+                  activeTab === 'finances' && !selectedPatientId ? 'active' : ''
+                }`}
+                onClick={() => navigateMobile('finances')}
+              >
+                <Wallet size={18} strokeWidth={2} />
+                <span>{t.nav.finances}</span>
+              </button>
+              <button
+                className={`nav-btn ${
+                  activeTab === 'archive' && !selectedPatientId ? 'active' : ''
+                }`}
+                onClick={() => navigateMobile('archive')}
+              >
+                <Archive size={18} strokeWidth={2} />
+                <span>{t.nav.archive}</span>
+              </button>
+              <button
+                className={`nav-btn ${
+                  activeTab === 'settings' && !selectedPatientId ? 'active' : ''
+                }`}
+                onClick={() => navigateMobile('settings')}
+              >
+                <Settings size={18} strokeWidth={2} />
+                <span>{t.nav.settings}</span>
+              </button>
+            </nav>
+
+            <div className="mobile-drawer-footer">
+              <div className="sync-pill" style={{ marginBottom: 12 }}>
+                <span className="sync-dot" />
+                <span>{syncNotice || t.sync.saved}</span>
+              </div>
+              <button
+                className="nav-btn"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  handleSignOut();
+                }}
+              >
+                <LogOut size={18} strokeWidth={2} />
+                <span>{t.nav.logout}</span>
+              </button>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* Desktop Sidebar Navigation */}
       <aside className="sidebar">
         <div className="brand-box">
           <div className="brand-title">
@@ -515,6 +680,70 @@ export function App() {
           )}
         </main>
       </div>
+
+      {/* Mobile Bottom Tab Bar */}
+      <nav className="mobile-bottom-nav" aria-label="Mobile Navigation">
+        <button
+          type="button"
+          className={`mobile-tab-btn ${
+            activeTab === 'home' && !selectedPatientId ? 'active' : ''
+          }`}
+          onClick={() => navigateMobile('home')}
+        >
+          <LayoutGrid size={20} strokeWidth={2} />
+          <span>{t.nav.home}</span>
+        </button>
+
+        <button
+          type="button"
+          className={`mobile-tab-btn ${
+            activeTab === 'patients' || selectedPatientId ? 'active' : ''
+          }`}
+          onClick={() => navigateMobile('patients')}
+        >
+          <Users size={20} strokeWidth={2} />
+          <span>{t.nav.patients}</span>
+        </button>
+
+        <button
+          type="button"
+          className={`mobile-tab-btn ${
+            activeTab === 'calendar' && !selectedPatientId ? 'active' : ''
+          }`}
+          onClick={() => navigateMobile('calendar')}
+        >
+          <Calendar size={20} strokeWidth={2} />
+          <span>{t.nav.calendar}</span>
+        </button>
+
+        <button
+          type="button"
+          className={`mobile-tab-btn ${
+            activeTab === 'finances' && !selectedPatientId ? 'active' : ''
+          }`}
+          onClick={() => navigateMobile('finances')}
+        >
+          <Wallet size={20} strokeWidth={2} />
+          <span>{t.nav.finances}</span>
+        </button>
+
+        <button
+          type="button"
+          className={`mobile-tab-btn ${
+            mobileMenuOpen ||
+            ((activeTab === 'inventory' ||
+              activeTab === 'archive' ||
+              activeTab === 'settings') &&
+              !selectedPatientId)
+              ? 'active'
+              : ''
+          }`}
+          onClick={() => setMobileMenuOpen((v) => !v)}
+        >
+          <Menu size={20} strokeWidth={2} />
+          <span>{lang === 'kz' ? 'Мәзір' : lang === 'en' ? 'More' : 'Меню'}</span>
+        </button>
+      </nav>
 
       {/* Global Create Patient Modal */}
       {creatingPatientInitialName !== null && (

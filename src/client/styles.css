@@ -242,6 +242,44 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.patients-toolbar {
+  display: flex;
+  gap: 10px;
+  flex: 1;
+  max-width: 560px;
+}
+
+.calendar-nav-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.calendar-controls-group {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.calendar-date-label {
+  font-weight: 600;
+}
+
+.mobile-header,
+.mobile-bottom-nav,
+.mobile-drawer-backdrop {
+  display: none;
 }
 
 /* Metrics */
@@ -877,29 +915,388 @@ body {
 @media (max-width: 900px) {
   .app-shell {
     flex-direction: column;
+    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
   }
-  .sidebar {
-    width: 100%;
-    padding: 12px 16px;
+
+  .sidebar,
+  .topbar {
+    display: none !important;
   }
-  .nav-list {
-    flex-direction: row;
-    overflow-x: auto;
-    padding-bottom: 6px;
+
+  /* Compact Sticky Mobile Top Header */
+  .mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: var(--navy-900);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.18);
   }
-  .nav-btn {
+
+  .mobile-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    min-width: 0;
+  }
+
+  .mobile-brand-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #FFFFFF;
+    line-height: 1.25;
     white-space: nowrap;
-    padding: 8px 12px;
-    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
-  .dashboard-grid-2,
-  .metrics-grid-4,
+
+  .mobile-brand-sub {
+    font-size: 11px;
+    color: #94A3B8;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .mobile-lang-switcher {
+    display: inline-flex;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 2px;
+  }
+
+  .mobile-lang-btn {
+    border: none;
+    background: transparent;
+    color: #CBD5E1;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 7px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  .mobile-lang-btn.active {
+    background: var(--gold-accent);
+    color: var(--navy-900);
+  }
+
+  .mobile-menu-toggle {
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.08);
+    color: #FFFFFF;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  /* Slide-Over Mobile Drawer */
+  .mobile-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(2px);
+    z-index: 80;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .mobile-drawer {
+    width: min(82vw, 310px);
+    height: 100%;
+    background: var(--navy-900);
+    color: #F8FAFC;
+    display: flex;
+    flex-direction: column;
+    padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+    box-shadow: -8px 0 28px rgba(0, 0, 0, 0.35);
+    overflow-y: auto;
+  }
+
+  .mobile-drawer-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 14px;
+  }
+
+  .mobile-drawer-close {
+    border: none;
+    background: rgba(255, 255, 255, 0.08);
+    color: #CBD5E1;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .mobile-drawer-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+  }
+
+  .mobile-drawer-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 14px;
+    margin-top: 14px;
+  }
+
+  /* Fixed Bottom Tab Bar */
+  .mobile-bottom-nav {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 45;
+    background: #FFFFFF;
+    border-top: 1px solid var(--border-color);
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -2px 12px rgba(15, 23, 42, 0.08);
+  }
+
+  .mobile-tab-btn {
+    border: none;
+    background: transparent;
+    color: #64748B;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 4px 2px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 8px;
+    min-width: 0;
+  }
+
+  .mobile-tab-btn span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  .mobile-tab-btn.active {
+    color: var(--navy-700);
+    font-weight: 700;
+  }
+
+  /* Content & Grids */
+  .content-container {
+    padding: 12px 12px 24px;
+  }
+
+  .page-stack {
+    gap: 14px;
+  }
+
+  .card {
+    padding: 16px 14px;
+    border-radius: 12px;
+  }
+
+  .dashboard-grid-2 {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .metrics-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .metric-card {
+    padding: 12px 14px;
+  }
+
+  .metric-value {
+    font-size: 18px;
+  }
+
   .form-row-2,
   .form-row-3,
-  .form-row-4 {
+  .form-row-4,
+  .visit-detail-grid {
     grid-template-columns: 1fr;
-  }
-  .content-container {
-    padding: 16px;
+    gap: 10px;
   }
 }
+
+@media (max-width: 640px) {
+  /* Prevent iOS Safari input auto-zoom */
+  .input,
+  .select,
+  .textarea {
+    font-size: 16px;
+  }
+
+  .hero-header-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .hero-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .hero-actions .btn {
+    justify-content: center;
+    padding: 10px 8px;
+    font-size: 13px;
+    width: 100%;
+  }
+
+  .patients-header-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .patients-toolbar {
+    flex-direction: column;
+    max-width: 100%;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .patients-toolbar .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .calendar-header-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .calendar-nav-group {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .calendar-date-label {
+    width: 100%;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .calendar-controls-group {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .calendar-controls-group .segmented-tabs {
+    display: flex;
+    width: 100%;
+  }
+
+  .calendar-controls-group .seg-tab {
+    flex: 1;
+    text-align: center;
+  }
+
+  .calendar-controls-group .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .patient-header-card .row-between {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .patient-header-card .btn-lg {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .patient-title {
+    font-size: 20px;
+  }
+
+  .patient-meta-row {
+    gap: 10px;
+    font-size: 13px;
+  }
+
+  .appointment-card-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 10px 8px;
+    font-size: 13px;
+  }
+
+  /* Bottom-sheet Modals on Phones */
+  .modal-backdrop {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal-card {
+    max-width: 100%;
+    width: 100%;
+    max-height: 92vh;
+    border-radius: 18px 18px 0 0;
+    padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .modal-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .modal-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .login-wrapper {
+    padding: 14px;
+  }
+
+  .login-card {
+    padding: 22px 18px;
+  }
+}
+

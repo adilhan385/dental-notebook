@@ -108,7 +108,7 @@ export function HomeView({
     <div className="page-stack">
       {/* Hero Search & Quick Actions Card */}
       <div className="card hero-search-card">
-        <div className="row-between" style={{ marginBottom: 16 }}>
+        <div className="row-between hero-header-row" style={{ marginBottom: 16 }}>
           <div>
             <h1 style={{ margin: 0, fontSize: 22 }}>{t.home.greeting}</h1>
             <div className="muted" style={{ fontSize: 13, marginTop: 2 }}>
@@ -116,7 +116,7 @@ export function HomeView({
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <div className="hero-actions">
             <button
               className="btn btn-primary"
               onClick={() => onNewPatient(searchQuery.trim())}
@@ -143,7 +143,6 @@ export function HomeView({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t.home.searchPlaceholder}
-            autoFocus
           />
 
           {searchQuery.trim().length > 0 && (

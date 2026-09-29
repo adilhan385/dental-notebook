@@ -35,9 +35,9 @@ export function PatientsListView({ t, onOpenPatient, onNewPatient }: Props) {
   return (
     <div className="page-stack">
       <div className="card">
-        <div className="row-between" style={{ flexWrap: 'wrap', gap: 12 }}>
+        <div className="row-between patients-header-row">
           <h1 style={{ margin: 0, fontSize: 22 }}>{t.patients.title}</h1>
-          <div style={{ display: 'flex', gap: 10, flex: 1, maxWidth: 560 }}>
+          <div className="patients-toolbar">
             <div className="search-input-wrapper">
               <Search size={16} className="search-input-icon" />
               <input
@@ -46,7 +46,6 @@ export function PatientsListView({ t, onOpenPatient, onNewPatient }: Props) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={t.home.searchPlaceholder}
-                autoFocus
               />
             </div>
             <button
