@@ -19,7 +19,7 @@
     "backup:create": "node --max-old-space-size=256 --import tsx scripts/backup-db.ts"
   },
   "dependencies": {
-    "@noble/hashes": "^1.7.1",
+    "@noble/hashes": "^2.4.0",
     "cookie-parser": "^1.4.7",
     "express": "^5.1.0",
     "lucide-react": "^0.475.0",
